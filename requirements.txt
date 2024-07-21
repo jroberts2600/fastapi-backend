@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+langchain_openai
+langchain_community
+faiss-cpu
+requests
+streamlit
+openai
