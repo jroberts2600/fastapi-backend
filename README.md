@@ -10,6 +10,7 @@ A Streamlit app for analyzing student grades with a FastAPI backend!
 - 👥 User-friendly interface for easy querying
 - 📈 Advanced data analysis using FAISS and local embeddings
 - 🤖 Integration with Ollama for natural language processing
+- Dockerfile included for running fastapi as a web service on Render
 
 ## How to run it on your own machine
 
