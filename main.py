@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 import requests
@@ -8,19 +9,16 @@ import requests
 app = FastAPI()
 
 # Load the CSV data
-csv_file_path = './grades.csv'  # Ensure this file is in the same directory
+csv_file_path = './grades.csv'
 data = pd.read_csv(csv_file_path)
 
-# Define a local embedding function
-def local_embedding(texts):
-    # This is a placeholder for your local embedding logic
-    # Replace this with your actual local embedding method
-    return [[0.0] * 768 for _ in texts]
+# Initialize the embedding model
+embedding_model = OpenAIEmbeddings(openai_api_key="your_openai_api_key")
 
 # Create embeddings for the CSV data
 def create_embeddings(data):
     data_str = data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
-    embeddings = local_embedding(data_str.tolist())
+    embeddings = embedding_model.embed_documents(data_str.tolist())
     return embeddings
 
 data['embeddings'] = create_embeddings(data)
@@ -34,14 +32,14 @@ documents = [
 ]
 
 # Create a FAISS index for fast similarity search
-faiss_index = FAISS.from_documents(documents, local_embedding)
+faiss_index = FAISS.from_documents(documents, embedding_model)
 
 class Query(BaseModel):
     text: str
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the API"}
+    return {"message": "Welcome to the Ollama API"}
 
 @app.post("/query/")
 def query_model(query: Query):
@@ -61,7 +59,11 @@ def run_ollama_model(prompt):
         response = requests.post(ollama_url, json={"prompt": prompt})
         
         if response.status_code == 200:
-            return response.json().get("result", "")
+            try:
+                return response.json().get("result", "")
+            except requests.JSONDecodeError:
+                print("Error: Response is not in JSON format")
+                return ""
         else:
             print(f"Error from Ollama server: {response.status_code} {response.text}")
             return ""
@@ -135,4 +137,11 @@ def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
     else:
         similar_docs = faiss_index.similarity_search(query, k=1)
         most_similar_doc = similar_docs[0]
-        relevant_data_str = pd.Series(most_similar_doc​⬤
+        relevant_data_str = pd.Series(most_similar_doc.metadata).to_string()
+
+    prompt = f"Analyze the following data and answer the query: {query}\n\nData:\n{relevant_data_str}"
+    return run_ollama_model(prompt)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
