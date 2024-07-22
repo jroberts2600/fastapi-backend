@@ -45,6 +45,9 @@ The app connects to a FastAPI backend. Update the `api_url` in `streamlit_app.py
 ```python
 api_url = "https://<ngrok url>/query"
 ```
+```ngrok
+cmd to start ngrok: ngrok http http://localhost:8000
+```
 
 ## Data Source
 
