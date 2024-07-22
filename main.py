@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
-from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 import requests
@@ -9,11 +8,18 @@ import requests
 app = FastAPI()
 
 # Load the CSV data
-csv_file_path = './grades.csv'
+csv_file_path = './grades.csv'  # Ensure this file is in the same directory
 data = pd.read_csv(csv_file_path)
 
+# Define a custom embedding class
+class LocalEmbedding:
+    def embed_documents(self, texts):
+        # This is a placeholder for your local embedding logic
+        # Replace this with your actual local embedding method
+        return [[0.0] * 768 for _ in texts]
+
 # Initialize the embedding model
-embedding_model = OpenAIEmbeddings(openai_api_key="your_openai_api_key")
+embedding_model = LocalEmbedding()
 
 # Create embeddings for the CSV data
 def create_embeddings(data):
@@ -32,14 +38,14 @@ documents = [
 ]
 
 # Create a FAISS index for fast similarity search
-faiss_index = FAISS.from_documents(documents, embedding_model)
+faiss_index = FAISS.from_documents(documents, embedding_model.embed_documents)
 
 class Query(BaseModel):
     text: str
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Ollama API"}
+    return {"message": "Welcome to the API"}
 
 @app.post("/query/")
 def query_model(query: Query):
@@ -56,7 +62,7 @@ def run_ollama_model(prompt):
         ollama_url = "https://<ngrok url>/query"
         
         # Send request to Ollama server
-        response = requests.post(ollama_url, json={"prompt": prompt})
+        response = requests.post(ollama_url, json={"text": prompt})
         
         if response.status_code == 200:
             try:
