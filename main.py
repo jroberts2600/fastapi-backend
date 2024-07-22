@@ -4,6 +4,7 @@ import pandas as pd
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 import requests
+import os
 
 app = FastAPI()
 
@@ -11,15 +12,21 @@ app = FastAPI()
 csv_file_path = './grades.csv'  # Ensure this file is in the same directory
 data = pd.read_csv(csv_file_path)
 
-# Define a custom embedding class
+# Define a custom embedding class for local embeddings
 class LocalEmbedding:
     def embed_documents(self, texts):
         # This is a placeholder for your local embedding logic
         # Replace this with your actual local embedding method
         return [[0.0] * 768 for _ in texts]
 
-# Initialize the embedding model
-embedding_model = LocalEmbedding()
+# Check if the OpenAI API key is available
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+if openai_api_key:
+    from langchain_openai import OpenAIEmbeddings
+    embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
+else:
+    embedding_model = LocalEmbedding()
 
 # Create embeddings for the CSV data
 def create_embeddings(data):
@@ -38,7 +45,7 @@ documents = [
 ]
 
 # Create a FAISS index for fast similarity search
-faiss_index = FAISS.from_documents(documents, embedding_model.embed_documents)
+faiss_index = FAISS.from_documents(documents, embedding_model)
 
 class Query(BaseModel):
     text: str
@@ -59,17 +66,13 @@ def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
         # URL of the Ollama server via Ngrok
-        ollama_url = "https://<ngrok url> or <render url>/query"
+        ollama_url = "https://9103-71-81-132-14.ngrok-free.app/query/"
         
         # Send request to Ollama server
         response = requests.post(ollama_url, json={"text": prompt})
         
         if response.status_code == 200:
-            try:
-                return response.json().get("result", "")
-            except requests.JSONDecodeError:
-                print("Error: Response is not in JSON format")
-                return ""
+            return response.json().get("result", "")
         else:
             print(f"Error from Ollama server: {response.status_code} {response.text}")
             return ""
