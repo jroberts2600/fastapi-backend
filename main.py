@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
-from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 import requests
@@ -9,16 +8,19 @@ import requests
 app = FastAPI()
 
 # Load the CSV data
-csv_file_path = 'grades.csv'  # Ensure this file is in the same directory
+csv_file_path = './grades.csv'  # Ensure this file is in the same directory
 data = pd.read_csv(csv_file_path)
 
-# Initialize the embedding model
-embedding_model = OpenAIEmbeddings()
+# Define a local embedding function
+def local_embedding(texts):
+    # This is a placeholder for your local embedding logic
+    # Replace this with your actual local embedding method
+    return [[0.0] * 768 for _ in texts]
 
 # Create embeddings for the CSV data
 def create_embeddings(data):
     data_str = data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
-    embeddings = embedding_model.embed_documents(data_str.tolist())
+    embeddings = local_embedding(data_str.tolist())
     return embeddings
 
 data['embeddings'] = create_embeddings(data)
@@ -32,7 +34,7 @@ documents = [
 ]
 
 # Create a FAISS index for fast similarity search
-faiss_index = FAISS.from_documents(documents, embedding_model)
+faiss_index = FAISS.from_documents(documents, local_embedding)
 
 class Query(BaseModel):
     text: str
@@ -53,7 +55,7 @@ def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
         # URL of the Ollama server via Ngrok
-        ollama_url = "http://https://9103-71-81-132-14.ngrok-free.app/query"
+        ollama_url = "https://<ngrok url>/query"
         
         # Send request to Ollama server
         response = requests.post(ollama_url, json={"prompt": prompt})
@@ -133,11 +135,4 @@ def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
     else:
         similar_docs = faiss_index.similarity_search(query, k=1)
         most_similar_doc = similar_docs[0]
-        relevant_data_str = pd.Series(most_similar_doc.metadata).to_string()
-
-    prompt = f"Analyze the following data and answer the query: {query}\n\nData:\n{relevant_data_str}"
-    return run_ollama_model(prompt)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        relevant_data_str = pd.Series(most_similar_doc​⬤
