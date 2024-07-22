@@ -43,7 +43,7 @@ A Streamlit app for analyzing student grades with a FastAPI backend!
 The app connects to a FastAPI backend. Update the `api_url` in `streamlit_app.py` if your backend location changes:
 
 ```python
-api_url = "https://9103-71-81-132-14.ngrok-free.app/query"
+api_url = "https://<ngrok url>/query"
 ```
 
 ## Data Source
