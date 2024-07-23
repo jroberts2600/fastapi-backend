@@ -66,8 +66,8 @@ def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
         # URL of the Ollama server via Ngrok
-        ollama_url = "https://9103-71-81-132-14.ngrok-free.app/query/"
-        
+        #ollama_url = "https://9103-71-81-132-14.ngrok-free.app/query/"
+        ollama_url = "https://fastapi-backend-9n3a.onrender.com/query"
         # Send request to Ollama server
         response = requests.post(ollama_url, json={"text": prompt})
         
