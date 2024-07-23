@@ -58,7 +58,7 @@ Ensure that the `grades.csv` file is in the same directory as `main.py`. This fi
 ## Google Colab
 
 You can also run this backend on Google Colab. Click the link below to open the Colab notebook:
-[Open in Google Colab](your-google-colab-link)
+[Open in Google Colab](https://colab.research.google.com/drive/1vYXAJGlHQu9nC7Dyw9kgkZ_y2Khvacli?usp=sharing)
 
 
 ## Query Examples
