@@ -1,43 +1,44 @@
-# 🎓 Student Grades Analysis App
+# 🎓 Student Grades Analysis Backend
 
-A Streamlit app for analyzing student grades with a FastAPI backend!
+
+This FastAPI application serves as the backend for analyzing student grades. It reads a CSV file containing student grades, creates embeddings, and allows querying the data using various APIs.
 
 
 ## Features
 
 - 📊 Query and analyze student grade data
 - 🔗 Real-time interaction with FastAPI backend
-- 👥 User-friendly interface for easy querying
 - 📈 Advanced data analysis using FAISS and local embeddings
 - 🤖 Integration with Ollama for natural language processing
 - Dockerfile included for running fastapi as a web service on Render
 
 ## How to run it on your own machine
 
-1. Clone the repository
+## Setup
 
-   ```
-   $ git clone https://github.com/yourusername/student-grades-analysis.git
-   $ cd student-grades-analysis
-   ```
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/yourusername/fastapi-backend.git
+    cd fastapi-backend
+    ```
 
-2. Install the requirements
+2. Create and activate a virtual environment:
+    ```sh
+    python -m venv venv
+    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    ```
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+3. Install the required packages:
+    ```sh
+    pip install -r requirements.txt
+    ```
 
-3. Run the FastAPI backend
+4. Run the FastAPI application:
+    ```sh
+    uvicorn main:app --host 0.0.0.0 --port 8000
+    ```
 
-   ```
-   $ uvicorn main:app --reload
-   ```
 
-4. Run the Streamlit app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
 
 ## Backend Configuration
 
@@ -53,6 +54,12 @@ cmd to start ngrok: ngrok http http://localhost:8000
 ## Data Source
 
 Ensure that the `grades.csv` file is in the same directory as `main.py`. This file contains the student grade data used by the application.
+
+## Google Colab
+
+You can also run this backend on Google Colab. Click the link below to open the Colab notebook:
+[Open in Google Colab](your-google-colab-link)
+
 
 ## Query Examples
 
