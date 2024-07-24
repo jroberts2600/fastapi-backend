@@ -1,7 +1,9 @@
 fastapi
-pydantic
-pandas
-sentence-transformers
-langchain-community
 uvicorn
+pandas
 requests
+langchain-community[faiss]
+langchain
+openai
+sentence-transformers
+
