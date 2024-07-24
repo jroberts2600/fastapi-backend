@@ -25,7 +25,7 @@ openai_api_key = os.getenv('OPENAI_API_KEY')
 
 class LocalEmbedding:
     def embed_documents(self, texts):
-        return [np.random.rand(768) for _ in texts]  # Random vectors instead of zeros
+        return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
 
 if openai_api_key:
     logging.info("Using OpenAI embeddings")
@@ -48,7 +48,7 @@ def create_embeddings(data):
         embeddings = embedding_model.embed_documents(data_str.tolist())
     return embeddings
 
-data['embeddings'] = create_embeddings(data)
+data['embeddings'] = list(create_embeddings(data))
 
 # Prepare documents for FAISS
 documents = [
