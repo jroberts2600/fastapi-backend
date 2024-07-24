@@ -4,8 +4,10 @@ import pandas as pd
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
-import subprocess
+from sentence_transformers import SentenceTransformer
 import os
+import requests
+import subprocess
 
 app = FastAPI()
 
@@ -13,13 +15,18 @@ app = FastAPI()
 csv_file_path = './grades.csv'  # Ensure this file is in the same directory
 data = pd.read_csv(csv_file_path)
 
-# Initialize the embedding model
-embedding_model = OpenAIEmbeddings()
+# Check if the OpenAI API key is available
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+if openai_api_key:
+    embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
+else:
+    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Create embeddings for the CSV data
 def create_embeddings(data):
     data_str = data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
-    embeddings = embedding_model.embed_documents(data_str.tolist())
+    embeddings = embedding_model.encode(data_str.tolist())
     return embeddings
 
 data['embeddings'] = create_embeddings(data)
@@ -40,7 +47,7 @@ class Query(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Ollama API"}
+    return {"message": "Welcome to the API"}
 
 @app.post("/query/")
 def query_model(query: Query):
@@ -53,12 +60,17 @@ def query_model(query: Query):
 def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
-        command = f"ollama run llama3:8b '{prompt}'"
-        print(f"Running command: {command}")
-        result = subprocess.run(command, capture_output=True, text=True, shell=True)
-        print(f"Subprocess output: {result.stdout}")
-        print(f"Subprocess error (if any): {result.stderr}")
-        return result.stdout
+        # URL of the Ollama server via Ngrok
+        ollama_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
+        #ollama_url = "https://fastapi-backend-9n3a.onrender.com/query"
+        # Send request to Ollama server
+        response = requests.post(ollama_url, json={"text": prompt})
+        
+        if response.status_code == 200:
+            return response.json().get("result", "")
+        else:
+            print(f"Error from Ollama server: {response.status_code} {response.text}")
+            return ""
     except Exception as e:
         print(f"Error running subprocess: {e}")
         return ""
@@ -81,7 +93,6 @@ def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
         num_students = data.shape[0]
         relevant_data_str = f"The dataset contains grades for {num_students} students."
     elif "correlation" in query.lower():
-        # Construct the detailed prompt with all student grades for Math and Physics
         data_str = data.to_csv(index=False)
         prompt = f"""
         The dataset contains grades for {data.shape[0]} students in Math and Physics. 
@@ -134,7 +145,6 @@ def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
         most_similar_doc = similar_docs[0]
         relevant_data_str = pd.Series(most_similar_doc.metadata).to_string()
 
-    # Pass the query and relevant data to the Ollama model
     prompt = f"Analyze the following data and answer the query: {query}\n\nData:\n{relevant_data_str}"
     return run_ollama_model(prompt)
 
