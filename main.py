@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.docstore.document import Document
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.docstore.document import Document
 from sentence_transformers import SentenceTransformer
 import os
 import requests
@@ -57,7 +57,7 @@ class Query(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Ollama API"}
+    return {"message": "Welcome to the API"}
 
 @app.post("/query/")
 def query_model(query: Query):
@@ -73,18 +73,21 @@ def run_ollama_model(prompt):
         # URL of the Ollama server via Ngrok
         ollama_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
         #ollama_url = "https://fastapi-backend-9n3a.onrender.com/query"
-        #ollama_url  = 
         # Send request to Ollama server
-        # command = f"ollama run llama3.1:8b '{prompt}'"
-        # print(f"Running command: {command}")
-        # result = subprocess.run(command, capture_output=True, text=True, shell=True)
-        # print(f"Subprocess output: {result.stdout}")
-        # print(f"Subprocess error (if any): {result.stderr}")
-        # return result.stdout
+        response = requests.post(ollama_url, json={"text": prompt})
+        
+        if response.status_code == 200:
+            try:
+                return response.json().get("result", "")
+            except requests.JSONDecodeError:
+                print("Error: Response is not in JSON format")
+                return ""
+        else:
+            print(f"Error from Ollama server: {response.status_code} {response.text}")
+            return ""
     except Exception as e:
         print(f"Error running subprocess: {e}")
         return ""
-
 
 def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
     # Process different types of queries and extract relevant data
