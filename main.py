@@ -8,8 +8,13 @@ from sentence_transformers import SentenceTransformer
 import os
 import requests
 import subprocess
+import numpy as np
+import logging
 
 app = FastAPI()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Load the CSV data
 csv_file_path = './grades.csv'  # Ensure this file is in the same directory
@@ -20,14 +25,18 @@ openai_api_key = os.getenv('OPENAI_API_KEY')
 
 class LocalEmbedding:
     def embed_documents(self, texts):
-        return [[0.0] * 768 for _ in texts]
+        return [np.random.rand(768) for _ in texts]  # Random vectors instead of zeros
 
 if openai_api_key:
+    logging.info("Using OpenAI embeddings")
     embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
 else:
     try:
+        logging.info("Attempting to use SentenceTransformer embeddings")
         embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-    except Exception:
+    except (ImportError, RuntimeError) as e:
+        logging.warning(f"SentenceTransformer not available: {e}")
+        logging.info("Falling back to local embeddings")
         embedding_model = LocalEmbedding()
 
 # Create embeddings for the CSV data
@@ -80,13 +89,13 @@ def run_ollama_model(prompt):
             try:
                 return response.json().get("result", "")
             except requests.JSONDecodeError:
-                print("Error: Response is not in JSON format")
+                logging.error("Error: Response is not in JSON format")
                 return ""
         else:
-            print(f"Error from Ollama server: {response.status_code} {response.text}")
+            logging.error(f"Error from Ollama server: {response.status_code} {response.text}")
             return ""
     except Exception as e:
-        print(f"Error running subprocess: {e}")
+        logging.error(f"Error running subprocess: {e}")
         return ""
 
 def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
