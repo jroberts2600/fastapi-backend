@@ -1,9 +1,7 @@
 fastapi
-uvicorn
+pydantic
 pandas
-langchain_openai
-langchain_community
-faiss-cpu
+langchain-openai
+langchain-community
+uvicorn
 requests
-streamlit
-openai
