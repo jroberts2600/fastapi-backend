@@ -18,15 +18,25 @@ data = pd.read_csv(csv_file_path)
 # Check if the OpenAI API key is available
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
+class LocalEmbedding:
+    def embed_documents(self, texts):
+        return [[0.0] * 768 for _ in texts]
+
 if openai_api_key:
     embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
 else:
-    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+    try:
+        embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+    except Exception:
+        embedding_model = LocalEmbedding()
 
 # Create embeddings for the CSV data
 def create_embeddings(data):
     data_str = data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
-    embeddings = embedding_model.encode(data_str.tolist())
+    if isinstance(embedding_model, SentenceTransformer):
+        embeddings = embedding_model.encode(data_str.tolist())
+    else:
+        embeddings = embedding_model.embed_documents(data_str.tolist())
     return embeddings
 
 data['embeddings'] = create_embeddings(data)
@@ -47,7 +57,7 @@ class Query(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the API"}
+    return {"message": "Welcome to the Ollama API"}
 
 @app.post("/query/")
 def query_model(query: Query):
@@ -63,17 +73,18 @@ def run_ollama_model(prompt):
         # URL of the Ollama server via Ngrok
         ollama_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
         #ollama_url = "https://fastapi-backend-9n3a.onrender.com/query"
+        #ollama_url  = 
         # Send request to Ollama server
-        response = requests.post(ollama_url, json={"text": prompt})
-        
-        if response.status_code == 200:
-            return response.json().get("result", "")
-        else:
-            print(f"Error from Ollama server: {response.status_code} {response.text}")
-            return ""
+        # command = f"ollama run llama3.1:8b '{prompt}'"
+        # print(f"Running command: {command}")
+        # result = subprocess.run(command, capture_output=True, text=True, shell=True)
+        # print(f"Subprocess output: {result.stdout}")
+        # print(f"Subprocess error (if any): {result.stderr}")
+        # return result.stdout
     except Exception as e:
         print(f"Error running subprocess: {e}")
         return ""
+
 
 def process_query(query: str, data: pd.DataFrame, faiss_index: FAISS) -> str:
     # Process different types of queries and extract relevant data
