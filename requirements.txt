@@ -2,7 +2,7 @@ fastapi
 uvicorn
 pandas
 requests
-langchain-community[faiss]
+langchain-community[FAISS]
 langchain
 openai
 sentence-transformers
