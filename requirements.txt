@@ -5,3 +5,4 @@ requests
 langchain-community[faiss]
 sentence-transformers
 numpy
+faiss-cpu

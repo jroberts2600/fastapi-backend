@@ -7,7 +7,6 @@ from langchain_community.docstore.document import Document
 from sentence_transformers import SentenceTransformer
 import os
 import requests
-import subprocess
 import numpy as np
 import logging
 
@@ -27,13 +26,20 @@ class LocalEmbedding:
     def embed_documents(self, texts):
         return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
 
+class SentenceTransformerWrapper:
+    def __init__(self, model_name):
+        self.model = SentenceTransformer(model_name)
+
+    def embed_documents(self, texts):
+        return self.model.encode(texts)
+
 if openai_api_key:
     logging.info("Using OpenAI embeddings")
     embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
 else:
     try:
         logging.info("Attempting to use SentenceTransformer embeddings")
-        embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        embedding_model = SentenceTransformerWrapper('all-MiniLM-L6-v2')
     except (ImportError, RuntimeError) as e:
         logging.warning(f"SentenceTransformer not available: {e}")
         logging.info("Falling back to local embeddings")
@@ -42,10 +48,7 @@ else:
 # Create embeddings for the CSV data
 def create_embeddings(data):
     data_str = data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
-    if isinstance(embedding_model, SentenceTransformer):
-        embeddings = embedding_model.encode(data_str.tolist())
-    else:
-        embeddings = embedding_model.embed_documents(data_str.tolist())
+    embeddings = embedding_model.embed_documents(data_str.tolist())
     return embeddings
 
 data['embeddings'] = list(create_embeddings(data))
@@ -84,7 +87,7 @@ def run_ollama_model(prompt):
         #ollama_url = "https://fastapi-backend-9n3a.onrender.com/query"
         # Send request to Ollama server
         response = requests.post(ollama_url, json={"text": prompt})
-        
+
         if response.status_code == 200:
             try:
                 return response.json().get("result", "")
