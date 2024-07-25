@@ -15,19 +15,20 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 
 # Load the CSV data
-csv_file_path = '/mnt/data/grades.csv'
+csv_file_path = 'grades.csv'
 data = pd.read_csv(csv_file_path)
+
+class LocalEmbedding:
+    def embed_documents(self, texts):
+        return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
 
 # Initialize Hugging Face embeddings
 try:
-    logging.info("Using SentenceTransformer embeddings")
+    logging.info("Using HuggingFace embeddings from LangChain")
     embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 except (ImportError, RuntimeError) as e:
-    logging.warning(f"SentenceTransformer not available: {e}")
+    logging.warning(f"HuggingFaceEmbeddings not available: {e}")
     logging.info("Falling back to local embeddings")
-    class LocalEmbedding:
-        def embed_documents(self, texts):
-            return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
     embedding_model = LocalEmbedding()
 
 # Prepare documents for FAISS
