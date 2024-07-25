@@ -1,8 +1,11 @@
+### `requirements.txt`
+```plaintext
 fastapi
-uvicorn
+pydantic
 pandas
-requests
-langchain-community[faiss]
+langchain_community
 sentence-transformers
+uvicorn
+requests
 numpy
 faiss-cpu
