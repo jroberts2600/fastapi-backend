@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
 from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 from sentence_transformers import SentenceTransformer
@@ -27,20 +28,13 @@ class LocalEmbedding:
     def embed_documents(self, texts):
         return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
 
-class SentenceTransformerWrapper:
-    def __init__(self, model_name):
-        self.model = SentenceTransformer(model_name)
-
-    def embed_documents(self, texts):
-        return self.model.encode(texts)
-
 if openai_api_key:
     logging.info("Using OpenAI embeddings")
     embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
 else:
     try:
         logging.info("Attempting to use SentenceTransformer embeddings")
-        embedding_model = SentenceTransformerWrapper('all-MiniLM-L6-v2')
+        embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
     except (ImportError, RuntimeError) as e:
         logging.warning(f"SentenceTransformer not available: {e}")
         logging.info("Falling back to local embeddings")

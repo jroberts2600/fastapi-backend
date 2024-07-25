@@ -1,7 +1,8 @@
 fastapi
 pydantic
 pandas
-langchain_community
+langchain-community
+langchain-huggingface
 sentence-transformers
 uvicorn
 requests
