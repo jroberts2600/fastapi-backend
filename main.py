@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
-from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
-from sentence_transformers import SentenceTransformer
+from langchain_huggingface import HuggingFaceEmbeddings
 import os
 import requests
 import numpy as np
@@ -16,34 +15,20 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 
 # Load the CSV data
-csv_file_path = './grades.csv'  # Ensure this file is in the same directory
+csv_file_path = '/mnt/data/grades.csv'
 data = pd.read_csv(csv_file_path)
 
-# Check if the OpenAI API key is available
-openai_api_key = os.getenv('OPENAI_API_KEY')
-
-class LocalEmbedding:
-    def embed_documents(self, texts):
-        return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
-
-class SentenceTransformerWrapper:
-    def __init__(self, model_name):
-        self.model = SentenceTransformer(model_name)
-
-    def embed_documents(self, texts):
-        return self.model.encode(texts)
-
-if openai_api_key:
-    logging.info("Using OpenAI embeddings")
-    embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
-else:
-    try:
-        logging.info("Attempting to use SentenceTransformer embeddings")
-        embedding_model = SentenceTransformerWrapper('all-MiniLM-L6-v2')
-    except (ImportError, RuntimeError) as e:
-        logging.warning(f"SentenceTransformer not available: {e}")
-        logging.info("Falling back to local embeddings")
-        embedding_model = LocalEmbedding()
+# Initialize Hugging Face embeddings
+try:
+    logging.info("Using SentenceTransformer embeddings")
+    embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+except (ImportError, RuntimeError) as e:
+    logging.warning(f"SentenceTransformer not available: {e}")
+    logging.info("Falling back to local embeddings")
+    class LocalEmbedding:
+        def embed_documents(self, texts):
+            return [np.random.rand(384) for _ in texts]  # Match the dimension of SentenceTransformer
+    embedding_model = LocalEmbedding()
 
 # Prepare documents for FAISS
 def create_faiss_index(data, embedding_model):
@@ -77,9 +62,8 @@ def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
         # URL of the Ollama server via Ngrok
-        ollama_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
-        # Send request to Ollama server
-        response = requests.post(ollama_url, json={"text": prompt})
+        ngrok_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
+        response = requests.post(ngrok_url, json={"text": prompt})
 
         if response.status_code == 200:
             try:
