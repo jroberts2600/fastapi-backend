@@ -2,6 +2,7 @@ fastapi
 pydantic
 pandas
 langchain_community
+langchain-huggingface
 sentence-transformers
 uvicorn
 requests
