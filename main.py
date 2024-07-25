@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 from sentence_transformers import SentenceTransformer
@@ -22,7 +21,6 @@ data = pd.read_csv(csv_file_path)
 
 # Check if the OpenAI API key is available
 openai_api_key = os.getenv('OPENAI_API_KEY')
-ngrok_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
 
 class LocalEmbedding:
     def embed_documents(self, texts):
@@ -35,14 +33,13 @@ class SentenceTransformerWrapper:
     def embed_documents(self, texts):
         return self.model.encode(texts)
 
-# Initialize embedding model based on availability of OpenAI API key
 if openai_api_key:
     logging.info("Using OpenAI embeddings")
     embedding_model = OpenAIEmbeddings(openai_api_key=openai_api_key)
 else:
     try:
         logging.info("Attempting to use SentenceTransformer embeddings")
-        embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+        embedding_model = SentenceTransformerWrapper('all-MiniLM-L6-v2')
     except (ImportError, RuntimeError) as e:
         logging.warning(f"SentenceTransformer not available: {e}")
         logging.info("Falling back to local embeddings")
@@ -79,7 +76,10 @@ def query_model(query: Query):
 def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
-        response = requests.post(ngrok_url, json={"text": prompt})
+        # URL of the Ollama server via Ngrok
+        ollama_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
+        # Send request to Ollama server
+        response = requests.post(ollama_url, json={"text": prompt})
 
         if response.status_code == 200:
             try:
