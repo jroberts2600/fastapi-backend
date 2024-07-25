@@ -21,6 +21,7 @@ data = pd.read_csv(csv_file_path)
 
 # Check if the OpenAI API key is available
 openai_api_key = os.getenv('OPENAI_API_KEY')
+ngrok_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
 
 class LocalEmbedding:
     def embed_documents(self, texts):
@@ -76,10 +77,7 @@ def query_model(query: Query):
 def run_ollama_model(prompt):
     """Run the Ollama model on the given prompt."""
     try:
-        # URL of the Ollama server via Ngrok
-        ollama_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
-        # Send request to Ollama server
-        response = requests.post(ollama_url, json={"text": prompt})
+        response = requests.post(ngrok_url, json={"text": prompt})
 
         if response.status_code == 200:
             try:
