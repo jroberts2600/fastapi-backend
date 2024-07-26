@@ -4,7 +4,7 @@ import pandas as pd
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.document import Document
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings # type: ignore
+from langchain_huggingface import HuggingFaceEmbeddings
 import os
 import requests
 import numpy as np
@@ -32,7 +32,7 @@ def initialize_embedding_model(openai_api_key=None):
             return OpenAIEmbeddings(openai_api_key=openai_api_key)
         except Exception as e:
             logging.warning(f"OpenAI embeddings not available: {e}")
-    
+
     try:
         logging.info("Using HuggingFace embeddings from LangChain")
         return HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
@@ -70,7 +70,7 @@ def query_model(query: Query):
     try:
         if query.openai_api_key:
             embedding_model = initialize_embedding_model(query.openai_api_key)
-            faiss_index = create_faiss_index(data, embedding_model)
+            faiss_index = create_faiss_index(data, embedding_model)  # Reinitialize faiss_index here
         result = process_query(query.text, faiss_index)
         return {"result": result}
     except Exception as e:
@@ -82,11 +82,11 @@ def run_ollama_model(prompt, data_file=None):
         # URL of the Ollama server via Ngrok
         ngrok_url = "https://7ebe-71-81-132-14.ngrok-free.app/query/"
         payload = {"text": prompt}
-        
+
         if data_file:
             with open(data_file, 'r') as file:
                 payload["data"] = file.read()
-        
+
         response = requests.post(ngrok_url, json=payload)
 
         if response.status_code == 200:
@@ -140,7 +140,7 @@ def process_query(query: str, faiss_index: FAISS) -> str:
         with tempfile.NamedTemporaryFile(delete=False, mode='w') as temp_file:
             temp_file.write(data_str)
             temp_file_path = temp_file.name
-        
+
         return run_ollama_model(prompt, data_file=temp_file_path)
     elif "read the entire csv" in query.lower() or "show the csv" in query.lower():
         relevant_data_str = data.to_string(index=False)
