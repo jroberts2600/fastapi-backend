@@ -3,6 +3,8 @@ pydantic
 pandas
 langchain_community
 langchain-huggingface
+langchain
+openai
 uvicorn
 requests
 numpy
